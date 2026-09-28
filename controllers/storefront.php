@@ -31,8 +31,15 @@ function shop(array $f): void
 {
     $page = max(1, (int)($_GET['page'] ?? 1));
     $per  = max(4, min(24, (int)setting('products_per_page', '12')));
+
+    // Optional category filter by slug (?category=) on /shop and /search
+    $cat = null;
+    if (!empty($_GET['category'])) {
+        $cat = Category::bySlug((string)$_GET['category']);
+    }
+
     $res = Product::browse([
-        'category_id' => $f['category_id'] ?? null,
+        'category_id' => $cat['id'] ?? ($f['category_id'] ?? null),
         'search'      => trim((string)($_GET['q'] ?? '')),
         'sort'        => $_GET['sort'] ?? 'new',
         'page'        => $page,
@@ -41,12 +48,13 @@ function shop(array $f): void
         'max_price'   => $_GET['max'] ?? null,
     ]);
     view('storefront/shop', [
-        'items'  => $res['items'],
-        'total'  => $res['total'],
-        'page'   => $page,
-        'per'    => $per,
-        'cats'   => Category::all(),
-        'title'  => 'Shop — ' . setting('store_name'),
+        'items'    => $res['items'],
+        'total'    => $res['total'],
+        'page'     => $page,
+        'per'      => $per,
+        'cats'     => Category::all(),
+        'category' => $cat,
+        'title'    => ($cat ? $cat['name'] . ' — ' : '') . 'Shop — ' . setting('store_name'),
     ]);
 }
 
